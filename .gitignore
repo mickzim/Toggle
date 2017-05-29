@@ -1,0 +1,7 @@
+*build
+build/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcuserdatad
+*.swp
+pkg
+Pods
