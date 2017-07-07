@@ -7,14 +7,24 @@ enum ToggleState {
 }
 
 extension ToggleState {
-    var cgColor: CGColor {
+    var color: UIColor {
         switch self {
-        case .undecided: return #colorLiteral(red: 0.8374213576, green: 0.8374213576, blue: 0.8374213576, alpha: 1).cgColor
-        case .off: return #colorLiteral(red: 0.9254902005, green: 0.2352941185, blue: 0.1019607857, alpha: 1).cgColor
-        case .on: return #colorLiteral(red: 0.3411764801, green: 0.6235294342, blue: 0.1686274558, alpha: 1).cgColor
+        case .undecided: return #colorLiteral(red: 0.8374213576, green: 0.8374213576, blue: 0.8374213576, alpha: 1)
+        case .off: return UIColor.red
+        case .on: return UIColor.green
         }
     }
+    var cgColor: CGColor {
+        return color.cgColor
+    }
 
+    var gradientState: (on: Bool, off: Bool) {
+        switch self {
+        case .undecided: return (false, false)
+        case .off: return (true, true)
+        case .on: return (true, true)
+        }
+    }
 }
 
 @IBDesignable open class Toggle: UIControl {
@@ -39,6 +49,8 @@ extension ToggleState {
 
     fileprivate let backgroundLayer = RoundedLayer()
     fileprivate let toggleLayer = RoundedLayer()
+    fileprivate let offGradient = RoundedGradientLayer()
+    fileprivate let onGradient = RoundedGradientLayer()
 
     fileprivate var bgColor: UIColor {
         return backgroundColor ?? UIColor.lightGray
@@ -68,18 +80,15 @@ extension ToggleState {
 
         backgroundLayer.contents = nil
         toggleLayer.contents = toggleImage
+
+        toggleGradientLayers()
     }
 
 }
 
 private extension Toggle {
     var xPositionOfToggle: CGFloat {
-        let w = layer.bounds.width - toggleLayer.bounds.width
-        switch toggleState {
-        case .undecided: return w / 2
-        case .off: return 0.5
-        case .on: return w - 1.0
-        }
+        return xPosition(forState: toggleState)
     }
 
     var toggleImage: CGImage? {
@@ -90,11 +99,18 @@ private extension Toggle {
         }
     }
 
-    var toggledBackgroundColor: UIColor {
+    func toggleGradientLayers() {
+        let gradientState = toggleState.gradientState
+        onGradient.isHidden = gradientState.on
+        offGradient.isHidden = gradientState.off
+    }
+
+    func xPosition(forState toggleState: ToggleState) -> CGFloat {
+        let w = layer.bounds.width - toggleLayer.bounds.width
         switch toggleState {
-        case .undecided: return #colorLiteral(red: 0.8374213576, green: 0.8374213576, blue: 0.8374213576, alpha: 1)
-        case .off: return #colorLiteral(red: 0.9254902005, green: 0.2352941185, blue: 0.1019607857, alpha: 1)
-        case .on: return #colorLiteral(red: 0.3411764801, green: 0.6235294342, blue: 0.1686274558, alpha: 1)
+        case .undecided: return w / 2
+        case .off: return 0.5
+        case .on: return w - 1.0
         }
     }
 
@@ -124,25 +140,57 @@ private extension Toggle {
         toggleLayer.borderWidth = 0.1
         toggleLayer.backgroundColor = UIColor.white.cgColor
 
-        let combinedImage = UIImage.combine(images: onImage, offImage, width: layer.bounds.width)
-        backgroundLayer.contents = combinedImage.cgImage
-        backgroundLayer.contentsGravity = kCAGravityCenter
+
+        offGradient.bounds = backgroundLayer.bounds.left(portion: 0.66)
+        offGradient.anchorPoint = CGPoint(x: 0, y: 0)
+        offGradient.colors = [ToggleState.undecided.cgColor, ToggleState.off.cgColor]
+        offGradient.startPoint = CGPoint(x: 0.5, y: 0)
+        offGradient.endPoint = CGPoint(x: 2, y: 0)
+        offGradient.position = CGPoint(x: backgroundLayer.bounds.width - offGradient.bounds.width, y: 0.0)
+
+        onGradient.bounds = backgroundLayer.bounds.left(portion: 0.66)
+        onGradient.anchorPoint = CGPoint(x: 0, y: 0)
+        onGradient.colors = [ToggleState.on.cgColor, ToggleState.undecided.cgColor]
+        onGradient.startPoint = CGPoint(x: -1, y: 0)
+        onGradient.endPoint = CGPoint(x: 0.5, y: 0)
+        onGradient.position = CGPoint(x: 0.0, y: 0.0)
+
+        backgroundLayer.addSublayer(offGradient)
+        backgroundLayer.addSublayer(onGradient)
+
         backgroundLayer.addSublayer(toggleLayer)
 
     }
 
 }
 
-private extension CGPoint {
+extension CGPoint {
     func insetBy(dx: CGFloat, dy: CGFloat) -> CGPoint {
         return CGPoint(x: self.x + dx, y: self.y + dy)
     }
 }
 
-private class RoundedLayer: CALayer {
+class RoundedLayer: CALayer {
     override func layoutSublayers() {
         super.layoutSublayers()
         cornerRadius = bounds.size.height / 2
     }
+}
+
+class RoundedGradientLayer: CAGradientLayer {
+    override func layoutSublayers() {
+        super.layoutSublayers()
+        cornerRadius = bounds.size.height / 2
+    }
+}
+
+extension CGRect {
+    func left(portion: CGFloat) -> CGRect {
+        return CGRect(x: origin.x, y: origin.y, width: size.width * portion, height: size.height)
+    }
+    func right(portion: CGFloat) -> CGRect {
+        return CGRect(x: origin.x + (size.width * portion), y: origin.y, width: size.width * portion, height: size.height)
+    }
+
 }
 
