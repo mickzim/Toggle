@@ -37,7 +37,7 @@
 		702DF80C1ED84E6D00659EA8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		702DF8161ED84EEB00659EA8 /* Podfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Podfile; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		702DF8181ED851FB00659EA8 /* Toggle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Toggle.swift; sourceTree = "<group>"; };
-		702DF81A1ED8832000659EA8 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		702DF81A1ED8832000659EA8 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = ../Images.xcassets; sourceTree = "<group>"; };
 		702DF81D1ED8871000659EA8 /* UIImage-Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIImage-Extension.swift"; sourceTree = "<group>"; };
 		71EFE12806747B150166A902 /* Pods-ToggleTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ToggleTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ToggleTests/Pods-ToggleTests.debug.xcconfig"; sourceTree = "<group>"; };
 		FDE59D22DE7F2F3F93948A3A /* Pods_ToggleTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ToggleTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -73,7 +73,6 @@
 		702DF7F21ED84E6C00659EA8 = {
 			isa = PBXGroup;
 			children = (
-				702DF81A1ED8832000659EA8 /* Images.xcassets */,
 				702DF8161ED84EEB00659EA8 /* Podfile */,
 				702DF7FE1ED84E6D00659EA8 /* Toggle */,
 				702DF8091ED84E6D00659EA8 /* ToggleTests */,
@@ -95,6 +94,7 @@
 		702DF7FE1ED84E6D00659EA8 /* Toggle */ = {
 			isa = PBXGroup;
 			children = (
+				702DF81A1ED8832000659EA8 /* Images.xcassets */,
 				702DF81C1ED886FA00659EA8 /* Category */,
 				702DF7FF1ED84E6D00659EA8 /* Toggle.h */,
 				702DF8001ED84E6D00659EA8 /* Info.plist */,
