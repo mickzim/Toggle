@@ -25,11 +25,7 @@ extension ToggleState {
     @IBInspectable public var offStateColor: UIColor = #colorLiteral(red: 0.9254902005, green: 0.2352941185, blue: 0.1019607857, alpha: 1)
     @IBInspectable public var onStateColor: UIColor = #colorLiteral(red: 0.4666666687, green: 0.7647058964, blue: 0.2666666806, alpha: 1)
 
-    @IBInspectable public var selectionState: Bool? = false {
-        willSet {
-            previousSelectionState = selectionState
-        }
-    }
+    @IBInspectable public var selectionState: Bool? = false
 
     fileprivate var toggleState: ToggleState {
         guard let selectionState = selectionState else { return .undecided }
@@ -43,7 +39,6 @@ extension ToggleState {
     fileprivate let toggleLayer = RoundedLayer()
     fileprivate let offGradient = RoundedGradientLayer()
     fileprivate let onGradient = RoundedGradientLayer()
-    fileprivate var previousSelectionState: Bool? = nil
 
     fileprivate var bgColor: UIColor {
         return backgroundColor ?? UIColor.lightGray
@@ -73,7 +68,7 @@ extension ToggleState {
         guard layer == self.layer else { return }
 
         toggleLayer.position = CGPoint(x: xPositionOfToggle, y: 1)
-        backgroundLayer.backgroundColor = cgColor
+        backgroundLayer.backgroundColor = cgBackgroundColor
 
         backgroundLayer.contents = nil
         toggleLayer.contents = toggleImage
@@ -89,14 +84,21 @@ extension ToggleState {
 
     open override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
         print("beginTracking: \(String(describing: touch)) \(String(describing: event))")
-        stretchToggleButton()
+        let startTouch: CGFloat = touch.location(in: self).x
+        stretchToggleButton(x: startTouch)
+        return true
+    }
+
+    open override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        print("continueTracking: \(String(describing: touch)) \(String(describing: event))")
         return true
     }
 
     open override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
         super.endTracking(touch, with: event)
         stopStretchingToggleButton()
-        switchState()
+        let endTouch: CGFloat = touch?.location(in: self).x ?? self.bounds.width / 2
+        switchState(x: endTouch)
         print("endTracking: \(String(describing: touch)) \(String(describing: event))")
     }
 
@@ -107,7 +109,7 @@ extension ToggleState {
 }
 
 private extension Toggle {
-    var cgColor: CGColor {
+    var cgBackgroundColor: CGColor {
         switch toggleState {
         case .undecided: return UIColor.clear.cgColor
         case .off: return offStateColor.cgColor
@@ -155,30 +157,39 @@ private extension Toggle {
         setupLayers()
     }
 
-    func stretchToggleButton() {
+    func stretchToggleButton(x startTouch: CGFloat) {
         let w = layer.bounds.size.height
         let bounds = CGRect(origin: backgroundLayer.bounds.origin, size: CGSize(width: w, height: w)).insetBy(dx: -borderWidth, dy: borderWidth)
         toggleLayer.bounds = bounds
+        let x = xAnchorPoint(x: startTouch)
+        toggleLayer.anchorPoint = CGPoint(x: x, y: -0.02)
+    }
+
+    func xAnchorPoint(x startTouch: CGFloat) -> CGFloat {
+        switch selectionState {
+        case .some(true): return 0.0
+        case .some(false) : return 0.0
+        case _: return startTouch >= bounds.width / 2 ? -0.10 : 0.10
+        }
     }
 
     func stopStretchingToggleButton() {
         let w = layer.bounds.size.height
         let bounds = CGRect(origin: backgroundLayer.bounds.origin, size: CGSize(width: w, height: w)).insetBy(dx: borderWidth, dy: borderWidth)
         toggleLayer.bounds = bounds
+        toggleLayer.anchorPoint = CGPoint(x: -0.00, y: -0.02)
     }
 
-    func switchState() {
-        selectionState = nextSelectionState()
+    func switchState(x endTouch: CGFloat) {
+        selectionState = nextSelectionState(x: endTouch)
         self.setNeedsLayout()
     }
 
-    func nextSelectionState() -> Bool? {
-        switch (previousSelectionState, selectionState) {
-        case (_,.some(true)): return nil
-        case (_,.some(false)) : return nil
-        case (.some(true),_): return false
-        case (.some(false),_): return true
-        default: return false
+    func nextSelectionState(x endTouch: CGFloat) -> Bool? {
+        switch selectionState {
+        case .some(true): return nil
+        case .some(false) : return nil
+        default: return endTouch >= bounds.width / 2
         }
     }
 
