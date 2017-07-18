@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 extension UIImage {
     class func combine(images: UIImage..., width: CGFloat = 0.0) -> UIImage {
