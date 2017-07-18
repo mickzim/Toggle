@@ -19,13 +19,13 @@ extension ToggleState {
 
 @IBDesignable open class Toggle: UIControl {
 
-    @IBInspectable public var borderWidth: CGFloat = 2.0
+    @IBInspectable public var borderWidth: CGFloat = 1.5
     @IBInspectable public var borderColor: UIColor = #colorLiteral(red: 0.9, green: 0.9, blue: 0.9, alpha: 1.0)
 
     @IBInspectable public var offStateColor: UIColor = #colorLiteral(red: 0.9254902005, green: 0.2352941185, blue: 0.1019607857, alpha: 1)
     @IBInspectable public var onStateColor: UIColor = #colorLiteral(red: 0.4666666687, green: 0.7647058964, blue: 0.2666666806, alpha: 1)
 
-    @IBInspectable public var selectionState: Bool? = nil
+    @IBInspectable public var selectionState: Bool? = false
 
     fileprivate var toggleState: ToggleState {
         guard let selectionState = selectionState else { return .undecided }
@@ -138,17 +138,17 @@ private extension Toggle {
 
         layer.addSublayer(backgroundLayer)
 
-        let w = layer.bounds.size.height - 2
+        let w = layer.bounds.size.height
 
-        let bounds = CGRect(origin: backgroundLayer.bounds.origin, size: CGSize(width: w, height: w)).insetBy(dx: 1.5, dy: 1.5)
+        let bounds = CGRect(origin: backgroundLayer.bounds.origin, size: CGSize(width: w, height: w)).insetBy(dx: borderWidth, dy: borderWidth)
         toggleLayer.bounds = bounds
-        toggleLayer.anchorPoint = CGPoint(x: -0.00, y: -0.05)
+        toggleLayer.anchorPoint = CGPoint(x: -0.00, y: -0.02)
         toggleLayer.borderColor = borderColor.cgColor
         toggleLayer.backgroundColor = UIColor.white.cgColor
 
         toggleLayer.shadowOpacity = 0.5
         toggleLayer.shadowRadius = 1
-        toggleLayer.shadowColor = UIColor.lightGray.cgColor
+        toggleLayer.shadowColor = UIColor.gray.cgColor
         toggleLayer.shadowOffset = CGSize(width: 0, height:  3)
 
 
