@@ -25,7 +25,11 @@ extension ToggleState {
     @IBInspectable public var offStateColor: UIColor = #colorLiteral(red: 0.9254902005, green: 0.2352941185, blue: 0.1019607857, alpha: 1)
     @IBInspectable public var onStateColor: UIColor = #colorLiteral(red: 0.4666666687, green: 0.7647058964, blue: 0.2666666806, alpha: 1)
 
-    @IBInspectable public var selectionState: Bool? = false
+    @IBInspectable public var selectionState: Bool? = false {
+        willSet {
+            previousSelectionState = selectionState
+        }
+    }
 
     fileprivate var toggleState: ToggleState {
         guard let selectionState = selectionState else { return .undecided }
@@ -39,6 +43,7 @@ extension ToggleState {
     fileprivate let toggleLayer = RoundedLayer()
     fileprivate let offGradient = RoundedGradientLayer()
     fileprivate let onGradient = RoundedGradientLayer()
+    fileprivate var previousSelectionState: Bool? = nil
 
     fileprivate var bgColor: UIColor {
         return backgroundColor ?? UIColor.lightGray
@@ -77,6 +82,28 @@ extension ToggleState {
         toggleGradientLayers()
     }
 
+    open override func sendActions(for controlEvents: UIControlEvents) {
+        super.sendActions(for: controlEvents)
+        print("sendActions: \(controlEvents)")
+    }
+
+    open override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        print("beginTracking: \(String(describing: touch)) \(String(describing: event))")
+        stretchToggleButton()
+        return true
+    }
+
+    open override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
+        super.endTracking(touch, with: event)
+        stopStretchingToggleButton()
+        switchState()
+        print("endTracking: \(String(describing: touch)) \(String(describing: event))")
+    }
+
+    open override func cancelTracking(with event: UIEvent?) {
+        super.cancelTracking(with: event)
+        print("cancelTracking: \(String(describing: event))")
+    }
 }
 
 private extension Toggle {
@@ -128,6 +155,32 @@ private extension Toggle {
         setupLayers()
     }
 
+    func stretchToggleButton() {
+        let w = layer.bounds.size.height
+        let bounds = CGRect(origin: backgroundLayer.bounds.origin, size: CGSize(width: w, height: w)).insetBy(dx: -borderWidth, dy: borderWidth)
+        toggleLayer.bounds = bounds
+    }
+
+    func stopStretchingToggleButton() {
+        let w = layer.bounds.size.height
+        let bounds = CGRect(origin: backgroundLayer.bounds.origin, size: CGSize(width: w, height: w)).insetBy(dx: borderWidth, dy: borderWidth)
+        toggleLayer.bounds = bounds
+    }
+
+    func switchState() {
+        selectionState = nextSelectionState()
+        self.setNeedsLayout()
+    }
+
+    func nextSelectionState() -> Bool? {
+        switch (previousSelectionState, selectionState) {
+        case (_,.some(true)): return nil
+        case (_,.some(false)) : return nil
+        case (.some(true),_): return false
+        case (.some(false),_): return true
+        default: return false
+        }
+    }
 
     func setupLayers() {
         backgroundLayer.bounds = layer.bounds
