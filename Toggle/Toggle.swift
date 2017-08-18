@@ -8,22 +8,23 @@ enum ToggleState {
 }
 
 extension ToggleState {
-    var gradientState: (on: Bool, off: Bool) {
-        switch self {
-        case .undecided: return (false, false)
-        case .off: return (true, true)
-        case .on: return (true, true)
-        }
+    var gradientStateHidden: Bool {
+        return self != .undecided
+//        switch self {
+//        case .undecided: return false
+//        case .off: return true
+//        case .on: return true
+//        }
     }
 }
 
 @IBDesignable open class Toggle: UIControl {
 
     @IBInspectable public var borderWidth: CGFloat = 1.5
-    @IBInspectable public var borderColor: UIColor = #colorLiteral(red: 0.9, green: 0.9, blue: 0.9, alpha: 1.0)
+    @IBInspectable public var borderColor: UIColor = #colorLiteral(red: 0.8900991082, green: 0.8902519345, blue: 0.8900894523, alpha: 1)
 
     @IBInspectable public var offStateColor: UIColor = #colorLiteral(red: 0.9254902005, green: 0.2352941185, blue: 0.1019607857, alpha: 1)
-    @IBInspectable public var onStateColor: UIColor = #colorLiteral(red: 0.4666666687, green: 0.7647058964, blue: 0.2666666806, alpha: 1)
+    @IBInspectable public var onStateColor: UIColor = #colorLiteral(red: 0.2910016179, green: 0.8302029371, blue: 0.3830116093, alpha: 1)
 
     @IBInspectable public var selectionState: Bool? = false
 
@@ -39,6 +40,8 @@ extension ToggleState {
     fileprivate let toggleLayer = RoundedLayer()
     fileprivate let offGradient = RoundedGradientLayer()
     fileprivate let onGradient = RoundedGradientLayer()
+    fileprivate var fillLayer: CALayer?
+    fileprivate var fillShape: CAShapeLayer?
 
     fileprivate var bgColor: UIColor {
         return backgroundColor ?? UIColor.lightGray
@@ -83,14 +86,17 @@ extension ToggleState {
     }
 
     open override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
-        print("beginTracking: \(String(describing: touch)) \(String(describing: event))")
+        print("beginTracking: TOUCH: \(String(describing: touch)) EVENT: \(String(describing: event))")
         let startTouch: CGFloat = touch.location(in: self).x
         stretchToggleButton(x: startTouch)
+        if selectionState == nil {
+            animateBackgroundColor()
+        }
         return true
     }
 
     open override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
-        print("continueTracking: \(String(describing: touch)) \(String(describing: event))")
+        print("continueTracking: TOUCH: \(String(describing: touch)) EVENT: \(String(describing: event))")
         return true
     }
 
@@ -99,7 +105,8 @@ extension ToggleState {
         stopStretchingToggleButton()
         let endTouch: CGFloat = touch?.location(in: self).x ?? self.bounds.width / 2
         switchState(x: endTouch)
-        print("endTracking: \(String(describing: touch)) \(String(describing: event))")
+        fillLayer?.removeFromSuperlayer()
+        print("endTracking: TOUCH: \(String(describing: touch)) EVENT: \(String(describing: event))")
     }
 
     open override func cancelTracking(with event: UIEvent?) {
@@ -138,9 +145,9 @@ private extension Toggle {
     }
 
     func toggleGradientLayers() {
-        let gradientState = toggleState.gradientState
-        onGradient.isHidden = gradientState.on
-        offGradient.isHidden = gradientState.off
+        let gradientState = toggleState.gradientStateHidden
+        onGradient.isHidden = gradientState
+        offGradient.isHidden = gradientState
     }
 
     func xPosition(forState toggleState: ToggleState) -> CGFloat {
@@ -193,6 +200,55 @@ private extension Toggle {
         }
     }
 
+    func animateBackgroundColor() {
+        animateTransition()
+
+//        CATransaction.begin()
+//        CATransaction.setCompletionBlock{
+//            self.backgroundLayer.backgroundColor = self.borderColor.cgColor
+//        }
+//        CATransaction.commit()
+    }
+
+    func animateTransition() {
+
+        fillLayer = RoundedLayer()
+
+        guard let fillLayer = fillLayer else { return }
+        fillLayer.backgroundColor = borderColor.cgColor
+
+        fillLayer.frame = backgroundLayer.frame
+        backgroundLayer.addSublayer(fillLayer)
+
+
+        let fromPath = UIBezierPath(roundedRect: backgroundLayer.bounds, cornerRadius: backgroundLayer.bounds.size.height / 2).cgPath
+        let toPath = UIBezierPath(roundedRect: CGRect(x: toggleLayer.frame.maxX, y: toggleLayer.bounds.midY, width: 1, height: 1), cornerRadius: 0.5).cgPath
+        fillShape = CAShapeLayer()
+
+        guard let fillShape = fillShape else { return }
+
+        fillShape.path = fromPath
+        fillShape.fillColor = UIColor.white.withAlphaComponent(0.5).cgColor
+
+        let fillAnimation = CABasicAnimation(keyPath: "path")
+        fillAnimation.duration = 0.5
+        fillAnimation.speed = 2.0
+        fillAnimation.fromValue = fromPath
+        fillAnimation.toValue = toPath
+
+        fillAnimation.fillMode = kCAFillModeBoth // keep to value after finishing
+        fillAnimation.isRemovedOnCompletion = false // don't remove after finishing
+
+        fillAnimation.delegate = self
+
+        fillShape.add(fillAnimation, forKey: "path")
+        fillLayer.mask = fillShape
+        fillLayer.addSublayer(fillShape)
+
+
+    }
+
+
     func setupLayers() {
         backgroundLayer.bounds = layer.bounds
         backgroundLayer.anchorPoint = CGPoint(x: 0.0, y: 0.0)
@@ -215,35 +271,18 @@ private extension Toggle {
         toggleLayer.shadowColor = UIColor.gray.cgColor
         toggleLayer.shadowOffset = CGSize(width: 0, height:  3)
 
-
-//        let shadowLayer = CAShapeLayer()
-//        shadowLayer.frame = toggleLayer.bounds
-//        shadowLayer.path = UIBezierPath(roundedRect: toggleLayer.bounds, cornerRadius: toggleLayer.bounds.size.height / 2).cgPath
-//        shadowLayer.shadowOpacity = 0.5
-//        shadowLayer.shadowRadius = 5
-//        shadowLayer.masksToBounds = false
-//        shadowLayer.shadowOffset = .zero
-
-//        offGradient.bounds = backgroundLayer.bounds.left(portion: 0.66)
-//        offGradient.anchorPoint = CGPoint(x: 0, y: 0)
-//        offGradient.colors = [ToggleState.undecided.cgColor, ToggleState.off.cgColor]
-//        offGradient.startPoint = CGPoint(x: 0.75, y: 0)
-//        offGradient.endPoint = CGPoint(x: 2, y: 0)
-//        offGradient.position = CGPoint(x: backgroundLayer.bounds.width - offGradient.bounds.width, y: 0.0)
-//
-//        onGradient.bounds = backgroundLayer.bounds.left(portion: 0.66)
-//        onGradient.anchorPoint = CGPoint(x: 0, y: 0)
-//        onGradient.colors = [ToggleState.on.cgColor, ToggleState.undecided.cgColor]
-//        onGradient.startPoint = CGPoint(x: -1, y: 0)
-//        onGradient.endPoint = CGPoint(x: 0.25, y: 0)
-//        onGradient.position = CGPoint(x: 0.0, y: 0.0)
-//
-//        backgroundLayer.addSublayer(offGradient)
-//        backgroundLayer.addSublayer(onGradient)
-
         layer.addSublayer(toggleLayer)
     }
 
+}
+
+extension Toggle: CAAnimationDelegate {
+    public func animationDidStart(_ anim: CAAnimation) {
+    }
+
+    public func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
+        fillShape?.fillColor = borderColor.cgColor
+    }
 }
 
 extension CGPoint {
@@ -270,9 +309,13 @@ extension CGRect {
     func left(portion: CGFloat) -> CGRect {
         return CGRect(x: origin.x, y: origin.y, width: size.width * portion, height: size.height)
     }
+
     func right(portion: CGFloat) -> CGRect {
         return CGRect(x: origin.x + (size.width * portion), y: origin.y, width: size.width * portion, height: size.height)
     }
 
-}
+    func center(size: CGFloat) -> CGRect {
+        return CGRect(x: (maxX - size) / 2, y: (maxY - size) / 2, width: size, height: size)
+    }
 
+}
